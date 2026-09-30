@@ -39,23 +39,27 @@
             letter-spacing: 0.5px;
         }
         .hand-area {
-            background: #fff;
+            background: #fafaf9;
+            border: 1px solid #ededed;
             border-radius: 12px;
-            box-shadow: 0 1px 3px rgba(16,24,40,0.06);
+            box-shadow: inset 0 1px 3px rgba(16,24,40,0.05);
             padding: 12px;
-            min-height: 52px;
+            min-height: 186px;                  /* 预留满手 13 张的高度，加载时由 JS 按当前宽度实测校正 */
             margin-bottom: 12px;
             display: flex;
             flex-wrap: wrap;
-            gap: 12px;                          /* 花色分组之间的间隔 */
+            gap: 6px;                           /* 同花色之间 6px，花色之间靠 .group-end 再加 6px */
             align-content: flex-start;
         }
+        .hand-area.is-empty {
+            align-items: center;
+            justify-content: center;
+        }
         .hand-group {
-            display: flex;
-            flex-wrap: wrap;                    /* 组内放不下时换行，避免整组溢出被裁切 */
-            min-width: 0;
-            max-width: 100%;
-            gap: 6px;
+            display: contents;                  /* 取消分组盒子：让每张牌直接参与排版，避免整组被挤到下一行 */
+        }
+        .hand-tile.group-end {
+            margin-right: 6px;                  /* 花色分界处的额外间隔 */
         }
         .hand-tile {
             width: 36px;
@@ -98,7 +102,7 @@
             color: #1b7a3d;
         }
         .empty-hint {
-            color: #767676;
+            color: #6b6b6b;                     /* 在牌架底色上仍满足 4.5:1 */
             font-size: 14px;
         }
         .result-area {
@@ -108,7 +112,7 @@
             box-shadow: 0 1px 3px rgba(16,24,40,0.06);
             padding: 12px;
             margin-bottom: 12px;
-            min-height: 36px;
+            min-height: 88px;                   /* 预留一行听牌小牌块的高度，结果出现时不再顶动下方面板 */
             color: #0066cc;
             font-weight: 500;
             text-align: center;
@@ -124,46 +128,63 @@
         }
         .result-tiles {
             display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
+            flex-wrap: nowrap;                     /* 始终一行：放不下的用「+N」合并，保证结果区高度恒定 */
+            gap: 6px;
             justify-content: center;
-            margin-top: 10px;
+            margin-top: 8px;
         }
         .mini-tile {
             position: relative;
-            width: 32px;
-            height: 42px;
+            flex: 0 0 auto;
+            width: 28px;
+            height: 36px;
             background: linear-gradient(#fffdf8, #f2ece0);
             border: 1px solid #8f8f8f;
             border-bottom-width: 3px;
-            border-radius: 6px;
+            border-radius: 5px;
             display: flex;
             align-items: center;
             justify-content: center;
             box-shadow: 0 1px 2px rgba(0,0,0,0.18);
         }
         .mini-tile .t-num {
-            font-size: 13px;
+            font-size: 12px;
         }
         .mini-tile .t-suit {
-            font-size: 9px;
+            font-size: 8px;
         }
         .mini-tile .t-honor {
-            font-size: 15px;
+            font-size: 13px;
         }
         .mini-badge {
             position: absolute;
-            top: -6px;
-            right: -6px;
-            min-width: 16px;
-            height: 16px;
+            top: -5px;
+            right: -5px;
+            min-width: 14px;
+            height: 14px;
             padding: 0 3px;
-            border-radius: 8px;
+            border-radius: 7px;
             background: #0062cc;
             color: #fff;
-            font-size: 10px;
+            font-size: 9px;
             font-weight: 700;
-            line-height: 16px;
+            line-height: 14px;
+            text-align: center;
+            font-variant-numeric: tabular-nums;
+        }
+        .mini-pill {
+            flex: 0 0 auto;
+            align-self: center;
+            margin-left: 2px;
+            padding: 0 6px;
+            min-width: 28px;
+            height: 20px;
+            border: 1px solid currentColor;
+            border-radius: 10px;
+            background: #fff;
+            font-size: 12px;
+            font-weight: 700;
+            line-height: 18px;
             text-align: center;
             font-variant-numeric: tabular-nums;
         }
@@ -478,6 +499,7 @@
                 groupEl.className = 'hand-group';
                 groupEl.setAttribute('role', 'group');
                 groupEl.setAttribute('aria-label', group[2]);
+                let lastTile = null;
                 for (let i = group[0]; i <= group[1]; i++) {
                     for (let j = 0; j < handCounts[i]; j++) {
                         hasTile = true;
@@ -488,14 +510,19 @@
                         tile.setAttribute('aria-label', `移除${TILE_NAMES[i]}`);
                         tile.onclick = () => removeTile(i);
                         groupEl.appendChild(tile);
+                        lastTile = tile;
                     }
                 }
                 if (groupEl.childElementCount > 0) {
+                    if (lastTile) lastTile.classList.add('group-end');   // 花色分界处留额外间隔
                     handArea.appendChild(groupEl);
                 }
             }
             if (!hasTile) {
                 handArea.innerHTML = '<span class="empty-hint">点击下方牌添加手牌</span>';
+                handArea.classList.add('is-empty');
+            } else {
+                handArea.classList.remove('is-empty');
             }
         }
 
@@ -552,7 +579,11 @@
             return undoBtn;
         }
 
-        // 听牌结果：小牌块 + 每张牌的未见张数
+        // 听牌结果：一行小牌块（每个带「未见张数」角标）+ 摘要。
+        // 小牌块尺寸与 .result-tiles 的 gap 必须和 CSS 保持一致，用于计算一行能放几个。
+        const CHIP_W = 28;
+        const CHIP_GAP = 6;
+
         function showTingResult(tingIndexes) {
             clearUndoOffer();
             const resultArea = document.getElementById('resultArea');
@@ -562,12 +593,25 @@
 
             const unseen = tingIndexes.reduce((sum, i) => sum + (4 - handCounts[i]), 0);
             const label = document.createElement('div');
+            label.className = 'result-summary';
             label.textContent = `听牌 ${tingIndexes.length} 种 · 未见 ${unseen} 张`;
             resultArea.appendChild(label);
 
             const row = document.createElement('div');
             row.className = 'result-tiles';
-            for (const i of tingIndexes) {
+
+            // 一行放不下就用「+N」合并，保证结果区高度恒定、不会顶动下面的选牌面板
+            const inner = (resultArea.clientWidth || 0) - 24;
+            const capacity = Math.max(1, Math.floor((inner + CHIP_GAP) / (CHIP_W + CHIP_GAP)));
+            let shown = tingIndexes.length;
+            let hidden = 0;
+            if (shown > capacity) {
+                shown = Math.max(1, capacity - 1);
+                hidden = tingIndexes.length - shown;
+            }
+
+            for (let k = 0; k < shown; k++) {
+                const i = tingIndexes[k];
                 const left = 4 - handCounts[i];
                 const chip = document.createElement('div');
                 chip.className = 'mini-tile';
@@ -575,7 +619,20 @@
                 chip.innerHTML = tileFaceHTML(i) + `<span class="mini-badge">${left}</span>`;
                 row.appendChild(chip);
             }
+            if (hidden > 0) {
+                const pill = document.createElement('div');
+                pill.className = 'mini-pill';
+                pill.textContent = '+' + hidden;
+                pill.setAttribute('aria-label', `另有 ${hidden} 种听牌未显示`);
+                row.appendChild(pill);
+            }
             resultArea.appendChild(row);
+
+            // 读屏用户始终能听到完整听牌列表（含被「+N」折叠的）
+            const sr = document.createElement('div');
+            sr.className = 'sr-only';
+            sr.textContent = '听牌：' + tingIndexes.map(i => TILE_NAMES[i]).join('、');
+            resultArea.appendChild(sr);
         }
 
         // ---------- 清空 ----------
@@ -680,6 +737,69 @@
             }
         });
 
+        // ---------- 固定手牌区高度 ----------
+        // 目的：加牌导致换行时，手牌区不再变高，从而不会把下面的选牌面板顶下去。
+        // 做法：按当前宽度把几种「满手 13 张」的最坏分布各渲染一次，取最大占高作为固定高度。
+        const HAND_SAMPLES = [
+            [9, 3, 1, 0], [9, 4, 0, 0], [9, 2, 2, 0], [9, 1, 1, 2],
+            [8, 5, 0, 0], [7, 6, 0, 0], [6, 4, 3, 0], [5, 4, 4, 0],
+            [5, 5, 3, 0], [4, 4, 4, 1], [3, 3, 3, 4], [4, 3, 3, 3]
+        ];
+
+        function lockHandAreaHeight() {
+            const handArea = document.getElementById('handArea');
+            const snapshot = handCounts.slice();
+            const previous = handArea.style.minHeight;
+            handArea.style.minHeight = '0px';
+            let maxHeight = 0;
+            for (const sample of HAND_SAMPLES) {
+                handCounts.fill(0);
+                let start = 0;
+                for (let g = 0; g < 4; g++) {
+                    for (let k = 0; k < sample[g]; k++) handCounts[start + k]++;
+                    start += 9;                     // 万 0-8 / 条 9-17 / 筒 18-26 / 字 27-33
+                }
+                renderHand();
+                maxHeight = Math.max(maxHeight, handArea.offsetHeight || 0);
+            }
+            for (let i = 0; i < 34; i++) handCounts[i] = snapshot[i];
+            renderHand();
+            handArea.style.minHeight = (maxHeight ? (maxHeight + 2) + 'px' : previous);
+        }
+
+        // 固定结果区高度：用离屏探针测出「摘要 + 一行小牌块」的占高，
+        // 这样无论显示提示文字还是听牌小牌块，结果区高度都一样，不会顶动下方面板。
+        function lockResultAreaHeight() {
+            const resultArea = document.getElementById('resultArea');
+            if (!resultArea || !document.body) return;
+
+            const probe = document.createElement('div');
+            probe.className = 'result-area is-result';
+            probe.setAttribute('aria-hidden', 'true');
+            probe.style.cssText = 'position:absolute;left:-9999px;top:0;visibility:hidden;min-height:0;width:' +
+                (resultArea.clientWidth || 320) + 'px;';
+
+            const label = document.createElement('div');
+            label.className = 'result-summary';
+            label.textContent = '听牌 9 种 · 未见 23 张';
+            probe.appendChild(label);
+
+            const row = document.createElement('div');
+            row.className = 'result-tiles';
+            for (let k = 0; k < 4; k++) {
+                const chip = document.createElement('div');
+                chip.className = 'mini-tile';
+                chip.innerHTML = tileFaceHTML(k) + '<span class="mini-badge">3</span>';
+                row.appendChild(chip);
+            }
+            probe.appendChild(row);
+
+            document.body.appendChild(probe);
+            const measured = probe.offsetHeight || 0;
+            document.body.removeChild(probe);
+            if (measured > 0) resultArea.style.minHeight = (measured + 1) + 'px';
+        }
+
         // ---------- 离线可用 ----------
         // 仅在 http/https 下注册 Service Worker；用 file:// 直接打开时自动跳过
         if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator &&
@@ -691,6 +811,25 @@
 
         // 初始化
         initTilePanel();
+        lockHandAreaHeight();
+        lockResultAreaHeight();
+        if (typeof window !== 'undefined' && window.addEventListener) {
+            let resizeTimer = null;
+            window.addEventListener('resize', () => {
+                clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(() => {
+                    lockHandAreaHeight();
+                    lockResultAreaHeight();
+                }, 150);
+            });
+        }
+        // 中文字体加载完可能改变字宽，从而改变换行，需要重新实测一次
+        if (typeof document !== 'undefined' && document.fonts && document.fonts.ready) {
+            document.fonts.ready.then(() => {
+                lockHandAreaHeight();
+                lockResultAreaHeight();
+            }).catch(() => {});
+        }
     </script>
 </body>
 </html>
