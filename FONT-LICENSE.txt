@@ -1,0 +1,11 @@
+mahjong-tiles.woff2 — 字体许可说明
+=====================================
+
+本文件是 Noto Sans Symbols 2 的子集，仅保留 U+1F000–U+1F021 共 34 个麻将牌字形。
+用于「麻将听牌计算器」里筒牌 / 条牌的牌面显示。
+
+版权：Copyright Google Inc.
+许可：SIL Open Font License, Version 1.1 (OFL-1.1)
+      许可全文：https://scripts.sil.org/OFL
+来源：https://fonts.google.com/noto/specimen/Noto+Sans+Symbols+2
+子集化方式：pyftsubset --unicodes=U+1F000-1F021 --flavor=woff2 （原始 373.5 KB → 6.23 KB）

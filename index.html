@@ -22,6 +22,12 @@
             box-sizing: border-box;
             -webkit-tap-highlight-color: transparent;
         }
+        /* 麻将牌面字形（筒/条的图案）：Noto Sans Symbols 2 的 34 字形子集，OFL-1.1，见 FONT-LICENSE.txt */
+        @font-face {
+            font-family: 'MahjongTiles';
+            src: url(data:font/woff2;base64,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) format('woff2');
+            font-display: block;
+        }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Segoe UI", system-ui, sans-serif;
             background: #f5f5f5;
@@ -62,6 +68,7 @@
             margin-right: 6px;                  /* 花色分界处的额外间隔 */
         }
         .hand-tile {
+            position: relative;                  /* .tile-clip 的定位基准，必须有 */
             width: 36px;
             height: 48px;
             background: linear-gradient(#fffdf8, #f2ece0);
@@ -75,32 +82,64 @@
             appearance: none;
             cursor: pointer;
             touch-action: manipulation;
+            container-type: size;                /* 牌面按牌自身尺寸用 cq 单位自适应 */
             box-shadow: 0 1px 2px rgba(0,0,0,0.18);
         }
-        /* 牌面：数字 + 花色，字牌为单字 */
-        .t-num {
-            font-size: 15px;
+        /* ---------- 牌面绘制 ---------- */
+        /* 方形裁剪盒：把麻将字形自带的牌框放大挤出并裁掉，只留牌面图案 */
+        .tile-clip {
+            position: absolute;
+            inset: 0;
+            margin: auto;
+            overflow: hidden;
+            width: 100%;
+            height: 100%;
+            width: min(100cqw, 100cqh);
+            height: min(100cqw, 100cqh);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .tile-sym {                              /* 筒 / 条 */
+            font-family: 'MahjongTiles';
+            line-height: 1;
+            font-size: 40px;
+            font-size: min(139cqw, 139cqh);
+        }
+        .tile-wan {                              /* 万：数字在上、萬在下 */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1px;
+            line-height: 1;
+        }
+        .tile-wan .n {
+            font-size: 16px;
+            font-size: 44cqh;
             font-weight: 700;
             line-height: 1;
-            font-variant-numeric: tabular-nums;
+            color: #1a1a1a;
         }
-        .t-suit {
-            font-size: 10px;
-            line-height: 1;
-            margin-left: 1px;
-            color: #555;
-        }
-        .t-honor {
-            font-size: 17px;
+        .tile-wan .w {
+            font-size: 13px;
+            font-size: 34cqh;
             font-weight: 700;
             line-height: 1;
-        }
-        .t-red {
             color: #c62828;
         }
-        .t-green {
-            color: #1b7a3d;
+        .tile-cjk {                              /* 字牌：单字 */
+            font-size: 20px;
+            font-size: min(78cqw, 78cqh);
+            font-weight: 700;
+            line-height: 1;
         }
+        .c-wan { color: #1a1a1a; }
+        .c-tiao { color: #1b7a3d; }
+        .c-tong { color: #1257a8; }
+        .c-zhong { color: #c62828; }
+        .c-fa { color: #1b7a3d; }
+        .c-bai { color: #1257a8; }
         .empty-hint {
             color: #6b6b6b;                     /* 在牌架底色上仍满足 4.5:1 */
             font-size: 14px;
@@ -145,16 +184,8 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            container-type: size;                /* 牌面自适应，无需单独写小号字号 */
             box-shadow: 0 1px 2px rgba(0,0,0,0.18);
-        }
-        .mini-tile .t-num {
-            font-size: 12px;
-        }
-        .mini-tile .t-suit {
-            font-size: 8px;
-        }
-        .mini-tile .t-honor {
-            font-size: 13px;
         }
         .mini-badge {
             position: absolute;
@@ -226,6 +257,7 @@
             grid-template-columns: repeat(7, minmax(0, 1fr));
         }
         .tile-btn {
+            position: relative;                  /* .tile-clip 的定位基准，必须有 */
             height: 44px;
             border: 1px solid #8f8f8f;
             border-radius: 6px;
@@ -234,6 +266,7 @@
             appearance: none;
             cursor: pointer;
             touch-action: manipulation;
+            container-type: size;                /* 牌面按按钮自身尺寸自适应（窄屏也裁得干净） */
             display: flex;
             align-items: center;
             justify-content: center;
@@ -354,7 +387,6 @@
             '一筒','二筒','三筒','四筒','五筒','六筒','七筒','八筒','九筒',
             '东','南','西','北','中','发','白'
         ];
-        const SUIT_NAMES = ['万', '条', '筒'];
 
         // 结果区文案与状态类（颜色交给 CSS，才能跟随深色模式）
         const IDLE_TEXT = '选好牌后点击「计算听牌」';
@@ -378,15 +410,22 @@
         // 撤销提示的定时器
         let undoTimer = null;
 
-        // 牌面内容：万/条/筒用「数字 + 花色」，字牌用单字（中为红、发为绿）
+        // 牌面内容：万 = 数字 + 萬 两行；筒/条 = 麻将字形（方形裁剪盒裁掉字形自带的牌框）；字牌 = 单字
+        const WAN_NUM = ['一', '二', '三', '四', '五', '六', '七', '八', '九'];
+        const TILE_SYMBOL_START = [0x1F007, 0x1F010, 0x1F019];   // 万/条/筒 在 Unicode 麻将区段的起始码位
+        const HONOR_COLOR = ['', '', '', '', ' c-zhong', ' c-fa', ' c-bai'];
+
         function tileFaceHTML(index) {
-            if (index < 27) {
-                const num = (index % 9) + 1;
-                const suit = SUIT_NAMES[Math.floor(index / 9)];
-                return `<span class="t-num">${num}</span><span class="t-suit">${suit}</span>`;
+            if (index < 9) {
+                return `<span class="tile-wan"><span class="n">${WAN_NUM[index]}</span><span class="w">萬</span></span>`;
             }
-            const colorClass = index === 31 ? ' t-red' : (index === 32 ? ' t-green' : '');
-            return `<span class="t-honor${colorClass}">${TILE_NAMES[index]}</span>`;
+            if (index < 27) {
+                const suit = index < 18 ? 1 : 2;
+                const cp = TILE_SYMBOL_START[suit] + (index % 9);
+                const cls = suit === 1 ? 'c-tiao' : 'c-tong';
+                return `<span class="tile-clip"><span class="tile-sym ${cls}">&#x${cp.toString(16)};</span></span>`;
+            }
+            return `<span class="tile-cjk c-wan${HONOR_COLOR[index - 27]}">${TILE_NAMES[index]}</span>`;
         }
 
         function totalTiles() {
