@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#f5f5f5">
+    <meta name="color-scheme" content="only light">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="听牌计算器">
+    <meta name="application-name" content="听牌计算器">
+    <title>麻将听牌计算器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Segoe UI", system-ui, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+            padding: max(12px, env(safe-area-inset-top)) 12px 12px;
+            max-width: 600px;
+            margin: 0 auto;
+            -webkit-text-size-adjust: 100%;
+        }
+        h2 {
+            text-align: center;
+            margin-bottom: 14px;
+            color: #222;
+            font-size: 20px;
+            letter-spacing: 0.5px;
+        }
+        .hand-area {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(16,24,40,0.06);
+            padding: 12px;
+            min-height: 52px;
+            margin-bottom: 12px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;                          /* 花色分组之间的间隔 */
+            align-content: flex-start;
+        }
+        .hand-group {
+            display: flex;
+            flex-wrap: wrap;                    /* 组内放不下时换行，避免整组溢出被裁切 */
+            min-width: 0;
+            max-width: 100%;
+            gap: 6px;
+        }
+        .hand-tile {
+            width: 36px;
+            height: 48px;
+            background: linear-gradient(#fffdf8, #f2ece0);
+            border: 1px solid #8f8f8f;
+            border-bottom-width: 3px;            /* 牌厚度 */
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: inherit;
+            appearance: none;
+            cursor: pointer;
+            touch-action: manipulation;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.18);
+        }
+        /* 牌面：数字 + 花色，字牌为单字 */
+        .t-num {
+            font-size: 15px;
+            font-weight: 700;
+            line-height: 1;
+            font-variant-numeric: tabular-nums;
+        }
+        .t-suit {
+            font-size: 10px;
+            line-height: 1;
+            margin-left: 1px;
+            color: #555;
+        }
+        .t-honor {
+            font-size: 17px;
+            font-weight: 700;
+            line-height: 1;
+        }
+        .t-red {
+            color: #c62828;
+        }
+        .t-green {
+            color: #1b7a3d;
+        }
+        .empty-hint {
+            color: #767676;
+            font-size: 14px;
+        }
+        .result-area {
+            background: #f2f7fd;
+            border-left: 3px solid currentColor;   /* 左侧状态色条，替代整条色块 */
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(16,24,40,0.06);
+            padding: 12px;
+            margin-bottom: 12px;
+            min-height: 36px;
+            color: #0066cc;
+            font-weight: 500;
+            text-align: center;
+        }
+        .result-area.is-result {
+            color: #0066cc;
+        }
+        .result-area.is-warn {
+            color: #b00020;
+        }
+        .result-area.is-note {
+            color: #333333;
+        }
+        .result-tiles {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 10px;
+        }
+        .mini-tile {
+            position: relative;
+            width: 32px;
+            height: 42px;
+            background: linear-gradient(#fffdf8, #f2ece0);
+            border: 1px solid #8f8f8f;
+            border-bottom-width: 3px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.18);
+        }
+        .mini-tile .t-num {
+            font-size: 13px;
+        }
+        .mini-tile .t-suit {
+            font-size: 9px;
+        }
+        .mini-tile .t-honor {
+            font-size: 15px;
+        }
+        .mini-badge {
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            min-width: 16px;
+            height: 16px;
+            padding: 0 3px;
+            border-radius: 8px;
+            background: #0062cc;
+            color: #fff;
+            font-size: 10px;
+            font-weight: 700;
+            line-height: 16px;
+            text-align: center;
+            font-variant-numeric: tabular-nums;
+        }
+        .undo-btn {
+            margin-left: 8px;
+            padding: 4px 12px;
+            border: 1px solid #0062cc;
+            border-radius: 8px;
+            background: #fff;
+            color: #0062cc;
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+        .undo-btn:active {
+            background: #e8f4fd;
+        }
+        .tile-panel {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(16,24,40,0.06);
+            padding: 12px;
+            margin-bottom: 12px;
+        }
+        .suit-title {
+            font-size: 14px;
+            color: #666;
+            margin: 8px 0 6px;
+        }
+        .tile-grid {
+            display: grid;
+            grid-template-columns: repeat(9, minmax(0, 1fr));
+            gap: 6px;
+            margin-bottom: 8px;
+        }
+        .honor-grid {
+            grid-template-columns: repeat(7, minmax(0, 1fr));
+        }
+        .tile-btn {
+            height: 44px;
+            border: 1px solid #8f8f8f;
+            border-radius: 6px;
+            background: #fafafa;
+            font-family: inherit;
+            appearance: none;
+            cursor: pointer;
+            touch-action: manipulation;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .tile-btn:active {
+            background: #e0e0e0;
+        }
+        .tile-btn.disabled {
+            opacity: 0.38;
+        }
+        .tile-btn:disabled {
+            cursor: default;
+        }
+        .tile-btn:focus-visible,
+        .hand-tile:focus-visible,
+        .btn:focus-visible,
+        .undo-btn:focus-visible {
+            outline: 3px solid #0062cc;
+            outline-offset: 2px;
+        }
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0 0 0 0);
+            white-space: nowrap;
+            border: 0;
+        }
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            position: sticky;                    /* 小屏上主操作始终可见 */
+            bottom: 0;
+            z-index: 10;
+            background: #f5f5f5;
+            padding: 10px 0 max(6px, env(safe-area-inset-bottom));
+            box-shadow: 0 -6px 10px -8px rgba(0,0,0,0.25);
+        }
+        .btn {
+            flex: 1;
+            height: 44px;
+            border: none;
+            border-radius: 10px;
+            font-family: inherit;
+            font-size: 16px;
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+        .btn-clear {
+            background: #eef0f2;
+            color: #333;
+        }
+        .btn-calc {
+            background: #0062cc;
+            color: #fff;
+        }
+        .btn:active {
+            opacity: 0.8;
+        }
+        /* 桌面/平板：手牌与选牌面板并排，少滚动 */
+        @media (min-width: 880px) {
+            body {
+                max-width: 920px;
+            }
+            .layout {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 12px;
+                align-items: start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h2>麻将听牌计算器</h2>
+
+    <div class="layout">
+        <div class="col-main">
+            <div class="hand-area" id="handArea" role="group" aria-label="手牌">
+                <span class="empty-hint">点击下方牌添加手牌</span>
+            </div>
+            <div id="handStatus" class="sr-only" aria-live="polite"></div>
+
+            <div class="result-area" id="resultArea" role="status" aria-live="polite">
+                选好牌后点击「计算听牌」
+            </div>
+
+            <div class="btn-group">
+                <button class="btn btn-clear" id="clearBtn" onclick="clearHand()">清空</button>
+                <button class="btn btn-calc" id="calcBtn" onclick="calcTing()">计算听牌</button>
+            </div>
+        </div>
+
+        <div class="col-panel">
+            <div class="tile-panel">
+                <div class="suit-title">万</div>
+                <div class="tile-grid" id="wanGrid"></div>
+
+                <div class="suit-title">条</div>
+                <div class="tile-grid" id="tiaoGrid"></div>
+
+                <div class="suit-title">筒</div>
+                <div class="tile-grid" id="tongGrid"></div>
+
+                <div class="suit-title">字牌</div>
+                <div class="tile-grid honor-grid" id="ziGrid"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 34种牌定义
+        const TILE_NAMES = [
+            '一万','二万','三万','四万','五万','六万','七万','八万','九万',
+            '一条','二条','三条','四条','五条','六条','七条','八条','九条',
+            '一筒','二筒','三筒','四筒','五筒','六筒','七筒','八筒','九筒',
+            '东','南','西','北','中','发','白'
+        ];
+        const SUIT_NAMES = ['万', '条', '筒'];
+
+        // 结果区文案与状态类（颜色交给 CSS，才能跟随深色模式）
+        const IDLE_TEXT = '选好牌后点击「计算听牌」';
+        const CLASS_RESULT = 'is-result';
+        const CLASS_WARN = 'is-warn';
+        const CLASS_NOTE = 'is-note';
+
+        const HAND_SIZE = 13;
+        const UNDO_MS = 6000;
+        const HISTORY_LIMIT = 30;
+
+        // 手牌计数数组，索引对应牌种，值为数量(0-4)
+        let handCounts = new Array(34).fill(0);
+
+        // 选牌按钮引用，用于刷新禁用态
+        const tileButtons = new Array(34);
+
+        // 手牌历史快照，支持误操作撤销
+        const history = [];
+
+        // 撤销提示的定时器
+        let undoTimer = null;
+
+        // 牌面内容：万/条/筒用「数字 + 花色」，字牌用单字（中为红、发为绿）
+        function tileFaceHTML(index) {
+            if (index < 27) {
+                const num = (index % 9) + 1;
+                const suit = SUIT_NAMES[Math.floor(index / 9)];
+                return `<span class="t-num">${num}</span><span class="t-suit">${suit}</span>`;
+            }
+            const colorClass = index === 31 ? ' t-red' : (index === 32 ? ' t-green' : '');
+            return `<span class="t-honor${colorClass}">${TILE_NAMES[index]}</span>`;
+        }
+
+        function totalTiles() {
+            return handCounts.reduce((a, b) => a + b, 0);
+        }
+
+        // ---------- 撤销历史 ----------
+        function pushHistory() {
+            history.push(handCounts.slice());
+            if (history.length > HISTORY_LIMIT) history.shift();
+        }
+
+        function undo() {
+            if (history.length === 0) {
+                showTransientMessage('没有可撤销的操作', CLASS_NOTE);
+                return;
+            }
+            const prev = history.pop();
+            for (let i = 0; i < 34; i++) handCounts[i] = prev[i];
+            renderHand();
+            updatePanelState();
+            resetResult();
+        }
+
+        // ---------- 选牌面板 ----------
+        function initTilePanel() {
+            const wan = document.getElementById('wanGrid');
+            const tiao = document.getElementById('tiaoGrid');
+            const tong = document.getElementById('tongGrid');
+            const zi = document.getElementById('ziGrid');
+
+            for (let i = 0; i < 9; i++) {
+                wan.appendChild(createTileBtn(i));
+                tiao.appendChild(createTileBtn(i + 9));
+                tong.appendChild(createTileBtn(i + 18));
+            }
+            for (let i = 27; i < 34; i++) {
+                zi.appendChild(createTileBtn(i));
+            }
+            updatePanelState();
+        }
+
+        function createTileBtn(index) {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'tile-btn';
+            btn.innerHTML = tileFaceHTML(index);
+            btn.setAttribute('aria-label', TILE_NAMES[index]);
+            btn.onclick = () => addTile(index);
+            tileButtons[index] = btn;
+            return btn;
+        }
+
+        // 手牌满 13 张、或该牌已有 4 张时，禁用对应按钮
+        function updatePanelState() {
+            const total = totalTiles();
+            for (let i = 0; i < 34; i++) {
+                const btn = tileButtons[i];
+                if (!btn) continue;
+                const disabled = total >= HAND_SIZE || handCounts[i] >= 4;
+                btn.disabled = disabled;
+                btn.classList.toggle('disabled', disabled);
+            }
+            const status = document.getElementById('handStatus');
+            if (status) status.textContent = `已选 ${total} / ${HAND_SIZE} 张`;
+        }
+
+        // ---------- 手牌增删 ----------
+        function addTile(index) {
+            const total = totalTiles();
+            if (total >= HAND_SIZE) {
+                showMessage('手牌已满 13 张，点手牌可移除', CLASS_WARN);
+                return;
+            }
+            if (handCounts[index] >= 4) {
+                showMessage('该牌最多 4 张', CLASS_WARN);
+                return;
+            }
+            pushHistory();
+            handCounts[index]++;
+            renderHand();
+            updatePanelState();
+            resetResult();
+        }
+
+        function lastTileIndex() {
+            for (let i = 33; i >= 0; i--) {
+                if (handCounts[i] > 0) return i;
+            }
+            return -1;
+        }
+
+        function removeTile(index) {
+            if (handCounts[index] <= 0) return;
+            pushHistory();
+            handCounts[index]--;
+            renderHand();
+            updatePanelState();
+            showUndoOffer(`已移除 ${TILE_NAMES[index]} `);
+        }
+
+        // 渲染手牌：按 万 / 条 / 筒 / 字 分组，组间留空隙
+        function renderHand() {
+            const handArea = document.getElementById('handArea');
+            handArea.innerHTML = '';
+            let hasTile = false;
+            const groups = [[0, 8, '万'], [9, 17, '条'], [18, 26, '筒'], [27, 33, '字牌']];
+            for (const group of groups) {
+                const groupEl = document.createElement('div');
+                groupEl.className = 'hand-group';
+                groupEl.setAttribute('role', 'group');
+                groupEl.setAttribute('aria-label', group[2]);
+                for (let i = group[0]; i <= group[1]; i++) {
+                    for (let j = 0; j < handCounts[i]; j++) {
+                        hasTile = true;
+                        const tile = document.createElement('button');
+                        tile.type = 'button';
+                        tile.className = 'hand-tile';
+                        tile.innerHTML = tileFaceHTML(i);
+                        tile.setAttribute('aria-label', `移除${TILE_NAMES[i]}`);
+                        tile.onclick = () => removeTile(i);
+                        groupEl.appendChild(tile);
+                    }
+                }
+                if (groupEl.childElementCount > 0) {
+                    handArea.appendChild(groupEl);
+                }
+            }
+            if (!hasTile) {
+                handArea.innerHTML = '<span class="empty-hint">点击下方牌添加手牌</span>';
+            }
+        }
+
+        // ---------- 结果区 ----------
+        // 任何新提示都作废待撤销的清空提示
+        function showMessage(text, stateClass) {
+            clearUndoOffer();
+            const resultArea = document.getElementById('resultArea');
+            resultArea.textContent = text;
+            resultArea.classList.remove(CLASS_RESULT, CLASS_WARN, CLASS_NOTE);
+            if (stateClass) resultArea.classList.add(stateClass);
+        }
+
+        function showTransientMessage(text, stateClass) {
+            showMessage(text, stateClass);
+            undoTimer = setTimeout(() => {
+                undoTimer = null;
+                resetResult();
+            }, 2500);
+        }
+
+        function resetResult() {
+            showMessage(IDLE_TEXT, null);
+        }
+
+        function clearUndoOffer() {
+            if (undoTimer !== null) {
+                clearTimeout(undoTimer);
+                undoTimer = null;
+            }
+        }
+
+        // 在结果区插入一条可撤销提示，返回撤销按钮
+        function showUndoOffer(text) {
+            clearUndoOffer();
+            const resultArea = document.getElementById('resultArea');
+            resultArea.textContent = text;
+            resultArea.classList.remove(CLASS_RESULT, CLASS_WARN, CLASS_NOTE);
+            resultArea.classList.add(CLASS_NOTE);
+            const undoBtn = document.createElement('button');
+            undoBtn.type = 'button';
+            undoBtn.className = 'undo-btn';
+            undoBtn.textContent = '撤销';
+            undoBtn.onclick = () => undo();
+            resultArea.appendChild(undoBtn);
+            undoTimer = setTimeout(() => {
+                undoTimer = null;
+                if (document.activeElement === undoBtn) {
+                    const clearBtn = document.getElementById('clearBtn');
+                    if (clearBtn && clearBtn.focus) clearBtn.focus();
+                }
+                resetResult();
+            }, UNDO_MS);
+            return undoBtn;
+        }
+
+        // 听牌结果：小牌块 + 每张牌的未见张数
+        function showTingResult(tingIndexes) {
+            clearUndoOffer();
+            const resultArea = document.getElementById('resultArea');
+            resultArea.textContent = '';
+            resultArea.classList.remove(CLASS_RESULT, CLASS_WARN, CLASS_NOTE);
+            resultArea.classList.add(CLASS_RESULT);
+
+            const unseen = tingIndexes.reduce((sum, i) => sum + (4 - handCounts[i]), 0);
+            const label = document.createElement('div');
+            label.textContent = `听牌 ${tingIndexes.length} 种 · 未见 ${unseen} 张`;
+            resultArea.appendChild(label);
+
+            const row = document.createElement('div');
+            row.className = 'result-tiles';
+            for (const i of tingIndexes) {
+                const left = 4 - handCounts[i];
+                const chip = document.createElement('div');
+                chip.className = 'mini-tile';
+                chip.setAttribute('aria-label', `${TILE_NAMES[i]}，未见 ${left} 张`);
+                chip.innerHTML = tileFaceHTML(i) + `<span class="mini-badge">${left}</span>`;
+                row.appendChild(chip);
+            }
+            resultArea.appendChild(row);
+        }
+
+        // ---------- 清空 ----------
+        function clearHand() {
+            const total = totalTiles();
+            if (total === 0) {
+                resetResult();
+                return;
+            }
+            pushHistory();
+            handCounts.fill(0);
+            renderHand();
+            updatePanelState();
+            const undoBtn = showUndoOffer(`已清空 ${total} 张 `);
+            if (undoBtn.focus) undoBtn.focus();   // 键盘用户可直接回车撤销
+        }
+
+        // ---------- 胡牌判定（4面子+1将） ----------
+        function isWin(counts) {
+            // 遍历所有可能的将牌
+            for (let i = 0; i < 34; i++) {
+                if (counts[i] >= 2) {
+                    const temp = [...counts];
+                    temp[i] -= 2;
+                    if (canFormAllMelds(temp)) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        // 判断剩余牌能否全部组成面子（刻子或顺子）
+        function canFormAllMelds(counts) {
+            // 找到第一张有剩余的牌
+            let i = 0;
+            while (i < 34 && counts[i] === 0) i++;
+            if (i === 34) return true; // 全部拆完，胡牌
+
+            // 尝试拆刻子
+            if (counts[i] >= 3) {
+                const temp = [...counts];
+                temp[i] -= 3;
+                if (canFormAllMelds(temp)) return true;
+            }
+
+            // 尝试拆顺子（字牌不能组成顺子）
+            const suitIndex = Math.floor(i / 9);
+            const posInSuit = i % 9;
+            if (suitIndex < 3 && posInSuit <= 6) {
+                if (counts[i+1] > 0 && counts[i+2] > 0) {
+                    const temp = [...counts];
+                    temp[i]--;
+                    temp[i+1]--;
+                    temp[i+2]--;
+                    if (canFormAllMelds(temp)) return true;
+                }
+            }
+
+            return false;
+        }
+
+        // 计算听牌
+        function calcTing() {
+            const total = totalTiles();
+            if (total !== HAND_SIZE) {
+                showMessage(`还需选 ${HAND_SIZE - total} 张（当前 ${total}/${HAND_SIZE}）`, CLASS_WARN);
+                return;
+            }
+
+            const tingIndexes = [];
+            for (let i = 0; i < 34; i++) {
+                if (handCounts[i] < 4) {
+                    const temp = [...handCounts];
+                    temp[i]++;
+                    if (isWin(temp)) {
+                        tingIndexes.push(i);
+                    }
+                }
+            }
+
+            if (tingIndexes.length === 0) {
+                showMessage('当前没有听牌', CLASS_WARN);
+            } else {
+                showTingResult(tingIndexes);
+            }
+        }
+
+        // ---------- 键盘快捷键 ----------
+        document.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && (e.key === 'z' || e.key === 'Z')) {
+                e.preventDefault();
+                undo();
+                return;
+            }
+            if (e.key === 'Backspace') {
+                const last = lastTileIndex();
+                if (last >= 0) {
+                    e.preventDefault();
+                    removeTile(last);
+                }
+            }
+        });
+
+        // ---------- 离线可用 ----------
+        // 仅在 http/https 下注册 Service Worker；用 file:// 直接打开时自动跳过
+        if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator &&
+            typeof location !== 'undefined' && location.protocol.indexOf('http') === 0) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js').catch(() => {});
+            });
+        }
+
+        // 初始化
+        initTilePanel();
+    </script>
+</body>
+</html>

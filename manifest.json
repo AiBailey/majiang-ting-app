@@ -1,0 +1,17 @@
+{
+  "name": "麻将听牌计算器",
+  "short_name": "听牌计算器",
+  "description": "输入 13 张手牌，计算听什么牌（4 面子 + 1 将）",
+  "lang": "zh-CN",
+  "start_url": "./mahjong-ting-calculator.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f5f5f5",
+  "theme_color": "#f5f5f5",
+  "icons": [
+    { "src": "./icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "./icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "./icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
