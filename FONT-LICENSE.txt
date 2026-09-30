@@ -1,21 +1,21 @@
 牌面字体许可说明
 =================
 
-本项目的牌面图形全部由 OFL-1.1 许可的开源字体生成，运行时不再依赖任何字体文件
-（万牌与字牌的 17 个字例外，以 3 KB 子集内嵌在 HTML 里）。
+本项目 34 张牌面全部由 Noto Sans Symbols 2 的麻将字形（U+1F000–U+1F021）
+转成 SVG 矢量路径绘制。页面里已无任何 @font-face，**运行时不含字体文件**，
+因此设备/系统的字体差异不会影响牌面渲染。
 
-1) 筒牌 / 条牌的图案（一条..九条、一筒..九筒，共 18 个）
-   来源：Noto Sans Symbols 2 的 U+1F000–U+1F021 麻将字形
-   处理：用 fontTools 提取矢量轮廓 → 丢掉字形自带的牌框 → 归一化到 100x100 坐标
-        → 以 SVG 路径内嵌进 mahjong-ting-calculator.html
-   中间产物：mahjong-tiles.woff2（34 字形子集，pyftsubset 生成，373.5 KB → 6.2 KB）
-   说明：该文件仅作留档，页面不再引用它
+生成方式（用 fontTools 脚本一次性完成）：
+  1. 提取 34 个字形的矢量轮廓
+  2. 丢掉字形自带的牌框（每个字形最外层的两个轮廓）
+  3. 翻转 Y 轴（字体坐标 Y 轴向上，SVG Y 轴向下）
+  4. 归一化到 100×100 坐标，坐标取整
+  5. 万牌按轮廓位置拆成「数字」与「萬」两段，便于分别上色（数字黑、萬红）
 
-2) 万牌与字牌的文字（一二三四五六七八九萬东南西北中发白，共 17 个字）
-   来源：Noto Serif SC Bold（宋体风格，比现代黑体更接近真实牌面）
-   处理：以 woff2 子集（3.0 KB）base64 内嵌在 HTML 的 @font-face 中
+中间产物：mahjong-tiles.woff2（34 字形子集，pyftsubset 生成，373.5 KB → 6.2 KB）
+  该文件仅作留档，页面不再引用它
 
 版权：Copyright Google Inc.
 许可：SIL Open Font License, Version 1.1 (OFL-1.1)
       许可全文：https://scripts.sil.org/OFL
-字体来源：https://fonts.google.com/noto
+字体来源：https://fonts.google.com/noto/specimen/Noto+Sans+Symbols+2
