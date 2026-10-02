@@ -61,11 +61,6 @@
             color: #0062cc;
             font-weight: 600;
         }
-        .mode-note {
-            margin-bottom: 12px;
-            font-size: 13px;
-            line-height: 1.5;
-        }
         .hand-area {
             background: #fafaf9;
             border: 1px solid #ededed;
@@ -361,8 +356,6 @@
         <button type="button" class="mode-btn" id="discardModeBtn" aria-pressed="false" onclick="setMode('discard')">出牌听牌（14 张）</button>
     </div>
 
-    <p class="mode-note" id="tingModeNote">仅输入手中剩余的 1、4、7、10、13 张牌；已固定的吃、碰、杠可省略。</p>
-
     <div class="layout">
         <div class="col-main">
             <div class="hand-area" id="handArea" role="group" aria-label="手牌">
@@ -371,7 +364,7 @@
             <div id="handStatus" class="sr-only" aria-live="polite"></div>
 
             <div class="result-area" id="resultArea" role="status" aria-live="polite">
-                选好 1、4、7、10、13 张手牌后点击「计算听牌」
+                仅输入手中剩余的 1、4、7、10、13 张牌后点击「计算听牌」；已固定的吃、碰、杠可省略。
             </div>
 
             <div class="btn-group">
@@ -407,7 +400,7 @@
         ];
 
         // 结果区文案与状态类（颜色交给 CSS，才能跟随深色模式）
-        const IDLE_TEXT = '选好 1、4、7、10、13 张手牌后点击「计算听牌」';
+        const IDLE_TEXT = '仅输入手中剩余的 1、4、7、10、13 张牌后点击「计算听牌」；已固定的吃、碰、杠可省略。';
         const TING_RESULT_NOTE = '未见张数仅扣除已输入手牌，未计入吃碰杠和牌桌上的牌';
         const CLASS_RESULT = 'is-result';
         const CLASS_WARN = 'is-warn';
@@ -496,7 +489,6 @@
             document.getElementById('tingModeBtn').setAttribute('aria-pressed', mode === 'ting');
             document.getElementById('discardModeBtn').setAttribute('aria-pressed', mode === 'discard');
             document.getElementById('calcBtn').textContent = mode === 'discard' ? '列出出牌方案' : '计算听牌';
-            document.getElementById('tingModeNote').hidden = mode !== 'ting';
             lockHandAreaHeight();
             updatePanelState();
             resetResult();
