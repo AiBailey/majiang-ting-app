@@ -99,6 +99,60 @@ test('14 张手牌列出全部不同出牌方案，同一种牌不重复且输�
     assert.deepEqual(hand, snapshot);
 });
 
+test('省略已固定面子后，2、5、8、11 张手牌列出出牌方案且不修改输入', () => {
+    const cases = [
+        { tiles: [31, 32], plans: [{ discard: 31, waits: [32] }, { discard: 32, waits: [31] }] },
+        { tiles: [31, 31], plans: [{ discard: 31, waits: [31] }] },
+        { tiles: [1, 2, 22, 22, 17], plans: [{ discard: 17, waits: [0, 3] }] },
+        { tiles: [1, 2, 22, 22, 17, 27, 27, 27], plans: [{ discard: 17, waits: [0, 3] }] },
+        { tiles: [1, 2, 22, 22, 17, 27, 27, 27, 9, 10, 11], plans: [{ discard: 17, waits: [0, 3] }] },
+        { tiles: [0, 2, 4, 6, 8], plans: [] },
+        { tiles: [0, 0, 0, 0, 1], plans: [{ discard: 0, waits: [1, 2] }] }
+    ];
+    for (const { tiles, plans } of cases) {
+        const hand = counts(tiles);
+        const snapshot = hand.slice();
+        assert.deepEqual(plain(findDiscardPlans(hand)), plans, `${tiles.length} 张：${tiles}`);
+        assert.deepEqual(hand, snapshot);
+    }
+});
+
+test('出牌听牌拒绝不合法张数及超过 14 张的输入', () => {
+    for (const total of [0, 1, 3, 4, 6, 7, 9, 10, 12, 13, 15]) {
+        assert.deepEqual(plain(findDiscardPlans(counts(Array.from({ length: total }, (_, i) => i)))), []);
+    }
+    assert.deepEqual(plain(findDiscardPlans(counts([0, 1, 2, 9, 10, 11, 18, 19, 20, 27, 27, 27, 28, 28, 28, 31, 32]))), []);
+});
+
+test('出牌听牌入口接受五种张数，提示补到下一档，说明使用现有结果区', () => {
+    const uiContext = vm.createContext({ document: { addEventListener() {} }, setTimeout, clearTimeout });
+    vm.runInContext(script.slice(0, script.indexOf('// 初始化')), uiContext);
+    vm.runInContext(`
+        showMessage = (text, state) => { globalThis.result = { text, state }; };
+        findDiscardPlans = () => { globalThis.called = true; return []; };
+    `, uiContext);
+    for (const total of [2, 5, 8, 11, 14]) {
+        uiContext.inputCounts = counts(Array.from({ length: total }, (_, i) => i));
+        vm.runInContext('handCounts = inputCounts; globalThis.called = false; calcDiscardTing();', uiContext);
+        assert.equal(uiContext.called, true);
+        assert.equal(uiContext.result.text, '当前没有打出一张即可听牌的方案');
+    }
+    for (const [total, needed] of [[0, 2], [1, 1], [3, 2], [4, 1], [6, 2], [7, 1], [9, 2], [10, 1], [12, 2], [13, 1]]) {
+        uiContext.inputCounts = counts(Array.from({ length: total }, (_, i) => i));
+        vm.runInContext('handCounts = inputCounts; globalThis.called = false; calcDiscardTing();', uiContext);
+        assert.equal(uiContext.called, false);
+        assert.equal(uiContext.result.text, `还需选 ${needed} 张（当前 ${total} 张；支持 2、5、8、11、14 张）`);
+        assert.equal(uiContext.result.state, 'is-warn');
+    }
+    uiContext.inputCounts = counts(Array.from({ length: 15 }, (_, i) => i));
+    vm.runInContext('handCounts = inputCounts; calcDiscardTing();', uiContext);
+    assert.equal(uiContext.result.text, '请移除 1 张手牌（当前 15 张；支持 2、5、8、11、14 张）');
+    vm.runInContext("calculationMode = 'discard'; resetResult();", uiContext);
+    assert.equal(uiContext.result.text, '仅输入摸牌后手中剩余的 2、5、8、11、14 张牌后点击「列出出牌方案」；已固定的吃、碰、杠可省略。');
+    vm.runInContext("calculationMode = 'ting'; resetResult();", uiContext);
+    assert.equal(uiContext.result.text, '仅输入手中剩余的 1、4、7、10、13 张牌后点击「计算听牌」；已固定的吃、碰、杠可省略。');
+});
+
 test('打出的牌计为已见，原手牌四张相同牌不能推荐再摸该牌', () => {
     const hand = counts([0, 0, 0, 0, 1, 2, 9, 10, 11, 18, 19, 20, 27, 27]);
     const remaining = hand.slice();

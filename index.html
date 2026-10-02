@@ -353,7 +353,7 @@
 
     <div class="mode-switch" role="group" aria-label="计算模式">
         <button type="button" class="mode-btn" id="tingModeBtn" aria-pressed="true" onclick="setMode('ting')">听牌计算</button>
-        <button type="button" class="mode-btn" id="discardModeBtn" aria-pressed="false" onclick="setMode('discard')">出牌听牌（14 张）</button>
+        <button type="button" class="mode-btn" id="discardModeBtn" aria-pressed="false" onclick="setMode('discard')">出牌听牌</button>
     </div>
 
     <div class="layout">
@@ -401,6 +401,7 @@
 
         // 结果区文案与状态类（颜色交给 CSS，才能跟随深色模式）
         const IDLE_TEXT = '仅输入手中剩余的 1、4、7、10、13 张牌后点击「计算听牌」；已固定的吃、碰、杠可省略。';
+        const DISCARD_IDLE_TEXT = '仅输入摸牌后手中剩余的 2、5、8、11、14 张牌后点击「列出出牌方案」；已固定的吃、碰、杠可省略。';
         const TING_RESULT_NOTE = '未见张数仅扣除已输入手牌，未计入吃碰杠和牌桌上的牌';
         const CLASS_RESULT = 'is-result';
         const CLASS_WARN = 'is-warn';
@@ -408,6 +409,7 @@
 
         const HAND_SIZE = 13;
         const TING_HAND_SIZES = [1, 4, 7, 10, 13];
+        const DISCARD_HAND_SIZES = [2, 5, 8, 11, 14];
         let calculationMode = 'ting';
         const UNDO_MS = 6000;
         const HISTORY_LIMIT = 30;
@@ -561,7 +563,7 @@
             }
             const status = document.getElementById('handStatus');
             if (status) status.textContent = calculationMode === 'discard'
-                ? `已选 ${total} / ${handSize()} 张`
+                ? `已选 ${total} 张，可计算张数：2、5、8、11、14`
                 : `已选 ${total} 张，可计算张数：1、4、7、10、13`;
         }
 
@@ -656,7 +658,7 @@
         }
 
         function resetResult() {
-            showMessage(calculationMode === 'discard' ? '选好 14 张手牌后点击「列出出牌方案」' : IDLE_TEXT, null);
+            showMessage(calculationMode === 'discard' ? DISCARD_IDLE_TEXT : IDLE_TEXT, null);
         }
 
         function clearUndoOffer() {
@@ -847,6 +849,7 @@
 
         // 每种手牌只尝试打出一次，保留所有能听牌的方案。
         function findDiscardPlans(counts) {
+            if (!DISCARD_HAND_SIZES.includes(counts.reduce((sum, count) => sum + count, 0))) return [];
             const plans = [];
             for (let discard = 0; discard < 34; discard++) {
                 if (counts[discard] === 0) continue;
@@ -861,8 +864,10 @@
 
         function calcDiscardTing() {
             const total = totalTiles();
-            if (total !== 14) {
-                showMessage(`还需选 ${14 - total} 张（当前 ${total}/14）`, CLASS_WARN);
+            if (!DISCARD_HAND_SIZES.includes(total)) {
+                const nextSize = DISCARD_HAND_SIZES.find(size => size > total);
+                const action = total > 14 ? `请移除 ${total - 14} 张手牌` : `还需选 ${nextSize - total} 张`;
+                showMessage(`${action}（当前 ${total} 张；支持 2、5、8、11、14 张）`, CLASS_WARN);
                 return;
             }
             const plans = findDiscardPlans(handCounts);
@@ -880,7 +885,7 @@
             resultArea.appendChild(summary);
             const note = document.createElement('div');
             note.className = 'result-note';
-            note.textContent = '未见张数仅扣除本次输入的手牌（含打出的牌）';
+            note.textContent = '未见张数仅扣除已输入手牌（含打出的牌），未计入吃碰杠和牌桌上的牌';
             resultArea.appendChild(note);
             for (const plan of plans) {
                 const item = document.createElement('div');
