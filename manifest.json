@@ -1,7 +1,7 @@
 {
   "name": "麻将听牌计算器",
   "short_name": "听牌计算器",
-  "description": "输入 13 张手牌，计算听什么牌（4 面子 + 1 将）",
+  "description": "输入手中剩余的 1、4、7、10、13 张牌，计算听什么牌（已固定的吃碰杠可省略）",
   "lang": "zh-CN",
   "start_url": "./mahjong-ting-calculator.html",
   "scope": "./",

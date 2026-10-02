@@ -61,6 +61,11 @@
             color: #0062cc;
             font-weight: 600;
         }
+        .mode-note {
+            margin-bottom: 12px;
+            font-size: 13px;
+            line-height: 1.5;
+        }
         .hand-area {
             background: #fafaf9;
             border: 1px solid #ededed;
@@ -352,9 +357,11 @@
     <h2>麻将听牌计算器</h2>
 
     <div class="mode-switch" role="group" aria-label="计算模式">
-        <button type="button" class="mode-btn" id="tingModeBtn" aria-pressed="true" onclick="setMode('ting')">听牌计算（13 张）</button>
+        <button type="button" class="mode-btn" id="tingModeBtn" aria-pressed="true" onclick="setMode('ting')">听牌计算</button>
         <button type="button" class="mode-btn" id="discardModeBtn" aria-pressed="false" onclick="setMode('discard')">出牌听牌（14 张）</button>
     </div>
+
+    <p class="mode-note" id="tingModeNote">仅输入手中剩余的 1、4、7、10、13 张牌；已固定的吃、碰、杠可省略。</p>
 
     <div class="layout">
         <div class="col-main">
@@ -364,7 +371,7 @@
             <div id="handStatus" class="sr-only" aria-live="polite"></div>
 
             <div class="result-area" id="resultArea" role="status" aria-live="polite">
-                选好牌后点击「计算听牌」
+                选好 1、4、7、10、13 张手牌后点击「计算听牌」
             </div>
 
             <div class="btn-group">
@@ -400,12 +407,14 @@
         ];
 
         // 结果区文案与状态类（颜色交给 CSS，才能跟随深色模式）
-        const IDLE_TEXT = '选好牌后点击「计算听牌」';
+        const IDLE_TEXT = '选好 1、4、7、10、13 张手牌后点击「计算听牌」';
+        const TING_RESULT_NOTE = '未见张数仅扣除已输入手牌，未计入吃碰杠和牌桌上的牌';
         const CLASS_RESULT = 'is-result';
         const CLASS_WARN = 'is-warn';
         const CLASS_NOTE = 'is-note';
 
         const HAND_SIZE = 13;
+        const TING_HAND_SIZES = [1, 4, 7, 10, 13];
         let calculationMode = 'ting';
         const UNDO_MS = 6000;
         const HISTORY_LIMIT = 30;
@@ -487,6 +496,7 @@
             document.getElementById('tingModeBtn').setAttribute('aria-pressed', mode === 'ting');
             document.getElementById('discardModeBtn').setAttribute('aria-pressed', mode === 'discard');
             document.getElementById('calcBtn').textContent = mode === 'discard' ? '列出出牌方案' : '计算听牌';
+            document.getElementById('tingModeNote').hidden = mode !== 'ting';
             lockHandAreaHeight();
             updatePanelState();
             resetResult();
@@ -547,7 +557,7 @@
             return btn;
         }
 
-        // 手牌达到当前模式的张数、或该牌已有 4 张时，禁用对应按钮
+        // 手牌达到当前模式的张数上限、或该牌已有 4 张时，禁用对应按钮
         function updatePanelState() {
             const total = totalTiles();
             for (let i = 0; i < 34; i++) {
@@ -558,7 +568,9 @@
                 btn.classList.toggle('disabled', disabled);
             }
             const status = document.getElementById('handStatus');
-            if (status) status.textContent = `已选 ${total} / ${handSize()} 张`;
+            if (status) status.textContent = calculationMode === 'discard'
+                ? `已选 ${total} / ${handSize()} 张`
+                : `已选 ${total} 张，可计算张数：1、4、7、10、13`;
         }
 
         // ---------- 手牌增删 ----------
@@ -735,6 +747,11 @@
             }
             resultArea.appendChild(row);
 
+            const note = document.createElement('div');
+            note.className = 'result-note';
+            note.textContent = TING_RESULT_NOTE;
+            resultArea.appendChild(note);
+
             // 读屏用户始终能听到完整听牌列表（含被「+N」折叠的）
             const sr = document.createElement('div');
             sr.className = 'sr-only';
@@ -757,7 +774,7 @@
             if (undoBtn.focus) undoBtn.focus();   // 键盘用户可直接回车撤销
         }
 
-        // ---------- 胡牌判定（4面子+1将） ----------
+        // ---------- 胡牌判定（手中剩余面子+1将，省略部分视为已固定面子） ----------
         function isWin(counts) {
             // 遍历所有可能的将牌
             for (let i = 0; i < 34; i++) {
@@ -803,6 +820,7 @@
         }
 
         function findTingTiles(counts) {
+            if (!TING_HAND_SIZES.includes(counts.reduce((sum, count) => sum + count, 0))) return [];
             const tingIndexes = [];
             for (let i = 0; i < 34; i++) {
                 if (counts[i] < 4) {
@@ -819,9 +837,10 @@
         // 计算听牌
         function calcTing() {
             const total = totalTiles();
-            if (total !== HAND_SIZE) {
-                const action = total > HAND_SIZE ? `请移除 ${total - HAND_SIZE} 张手牌` : `还需选 ${HAND_SIZE - total} 张`;
-                showMessage(`${action}（当前 ${total}/${HAND_SIZE}）`, CLASS_WARN);
+            if (!TING_HAND_SIZES.includes(total)) {
+                const nextSize = TING_HAND_SIZES.find(size => size > total);
+                const action = total > HAND_SIZE ? `请移除 ${total - HAND_SIZE} 张手牌` : `还需选 ${nextSize - total} 张`;
+                showMessage(`${action}（当前 ${total} 张；支持 1、4、7、10、13 张）`, CLASS_WARN);
                 return;
             }
 
@@ -958,7 +977,7 @@
             handArea.style.minHeight = (maxHeight ? (maxHeight + 2) + 'px' : previous);
         }
 
-        // 固定结果区高度：用离屏探针测出「摘要 + 一行小牌块」的占高，
+        // 固定结果区高度：用离屏探针测出「摘要 + 一行小牌块 + 估算说明」的占高，
         // 这样无论显示提示文字还是听牌小牌块，结果区高度都一样，不会顶动下方面板。
         function lockResultAreaHeight() {
             const resultArea = document.getElementById('resultArea');
@@ -984,6 +1003,11 @@
                 row.appendChild(chip);
             }
             probe.appendChild(row);
+
+            const note = document.createElement('div');
+            note.className = 'result-note';
+            note.textContent = TING_RESULT_NOTE;
+            probe.appendChild(note);
 
             document.body.appendChild(probe);
             const measured = probe.offsetHeight || 0;
