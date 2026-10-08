@@ -1,0 +1,25 @@
+name: 测试
+
+# 守住两条底线：
+#   1. index.html 里的听牌逻辑与出牌方案回归测试始终通过
+#   2. 应用只存在于 index.html —— 跳转页不得退化成第二份完整副本
+#      （该断言在 tests/ting.test.cjs 里，本地 node --test 与 CI 跑的是同一份）
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: 运行测试
+        run: node --test tests/ting.test.cjs
