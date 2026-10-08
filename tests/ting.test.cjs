@@ -172,8 +172,25 @@ test('无法打一张听牌时返回空方案', () => {
     assert.deepEqual(plain(findDiscardPlans(counts([0, 2, 4, 6, 8, 9, 11, 13, 15, 17, 27, 28, 29, 30]))), []);
 });
 
-test('两个 HTML 入口同步，页面和离线脚本语法有效', () => {
-    assert.equal(html, fs.readFileSync(path.join(root, 'mahjong-ting-calculator.html'), 'utf8'));
+test('index.html 是唯一入口，跳转页不复制应用，清单指向真实入口', () => {
+    const redirect = fs.readFileSync(path.join(root, 'mahjong-ting-calculator.html'), 'utf8');
+    const manifest = JSON.parse(fs.readFileSync(path.join(root, 'manifest.json'), 'utf8'));
+
+    // 应用本体只存在于 index.html
+    assert.ok(html.includes('TILE_PATHS'), 'index.html 应包含 34 张牌面数据');
+    assert.ok(html.includes('navigator.serviceWorker.register'), 'index.html 应注册 Service Worker');
+
+    // 跳转页只负责转发，不得再长成第二份完整应用
+    assert.ok(!redirect.includes('TILE_PATHS'), '跳转页不应包含牌面数据');
+    assert.ok(redirect.length * 4 < html.length, '跳转页应远小于 index.html');
+    assert.match(redirect, /url=\.\/index\.html/, '跳转页应声明 meta refresh 目标');
+    assert.match(redirect, /location\.replace\('\.\/index\.html'\)/, '跳转页应有脚本兜底跳转');
+
+    // 清单指向真实存在的入口文件
+    assert.equal(manifest.start_url, './index.html');
+    assert.ok(fs.existsSync(path.join(root, manifest.start_url.replace('./', ''))), 'start_url 应指向存在的文件');
+
+    // 页面与离线脚本语法有效
     new vm.Script(script);
     new vm.Script(fs.readFileSync(path.join(root, 'sw.js'), 'utf8'));
 });

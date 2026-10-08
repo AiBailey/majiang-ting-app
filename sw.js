@@ -1,11 +1,11 @@
 // 麻将听牌计算器 · 离线缓存
 // 页面用「网络优先」（联网时总是拿到最新版），图标等静态资源用「缓存优先」。
-// 注意：改了 HTML 后无需改这里；改了图标才需要把 CACHE 版本号 +1。
-const CACHE = 'mahjong-ting-v2';
+// 注意：index.html 每次联网都会重新拉取，改了它无需改这里；改了跳转页或图标才需要把 CACHE 版本号 +1。
+const CACHE = 'mahjong-ting-v3';
 
 const SHELL = [
-    './mahjong-ting-calculator.html',
     './index.html',
+    './mahjong-ting-calculator.html',
     './manifest.json',
     './favicon-32.png',
     './icon-192.png',
